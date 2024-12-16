@@ -1,4 +1,5 @@
 ﻿using BankingGatewayServices.Domain.Enums;
+using BankingGatewayServices.Domain.Security.Encryption;
 using Microsoft.AspNetCore.Identity;
 
 namespace BankingGatewayServices.Domain.Database.BankClientDB
@@ -18,7 +19,6 @@ namespace BankingGatewayServices.Domain.Database.BankClientDB
 
         public string NationalPath { get; set; } = string.Empty;
         public string NationalPathName { get; set; } = string.Empty;
-
 
         //Navigation Properties [Many]
         public ICollection<Alert> Alerts { get; set; } = new HashSet<Alert>();
