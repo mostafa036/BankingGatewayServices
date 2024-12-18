@@ -1,10 +1,11 @@
-﻿
-using BankingGatewayServices.Application.IServices;
+﻿using BankingGatewayServices.Application.IServices;
 using BankingGatewayServices.Application.MailSerives;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Options;
 using MimeKit;
-using System.Net.Mime;
+using MailKit.Net.Smtp;
+using MailKit.Security;
 
 
 
@@ -21,15 +22,19 @@ namespace BankingGatewayServices.Infrastructure.Services
 
         public async Task SendEmailAsync(string mailTo, string subject, string body, IList<IFormFile> attachments = null)
         {
-            var email = new MimeMessage
-            {
-                Sender = MailboxAddress.Parse(_mailSettings.Email),
-                Subject = subject
-            };
 
+            var email = new MimeKit.MimeMessage();
+
+            // Add sender and recipient
+            email.Sender = MailboxAddress.Parse(_mailSettings.Email);
+            email.From.Add(new MailboxAddress(_mailSettings.DisplayName, _mailSettings.Email));
             email.To.Add(MailboxAddress.Parse(mailTo));
+            email.Subject = subject; // Make sure this is correctly set
 
+
+            // Prepare email body
             var builder = new BodyBuilder();
+
 
             if (attachments != null)
             {
@@ -47,26 +52,17 @@ namespace BankingGatewayServices.Infrastructure.Services
                 }
             }
 
+
             builder.HtmlBody = body;
             email.Body = builder.ToMessageBody();
             email.From.Add(new MailboxAddress(_mailSettings.DisplayName, _mailSettings.Email));
 
             using var smtp = new SmtpClient();
             smtp.Connect(_mailSettings.Host, _mailSettings.Port, SecureSocketOptions.StartTls);
-
-            try
-            {
-                smtp.Authenticate(_mailSettings.Email, _mailSettings.Password);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Authentication failed: {ex.Message}");
-                throw;
-            }
-
+            smtp.Authenticate(_mailSettings.Email, _mailSettings.Password);
             await smtp.SendAsync(email);
 
-            smtp.Disconnect(true);        
+            smtp.Disconnect(true);
         }
     }
 }
